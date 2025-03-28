@@ -1,0 +1,77 @@
+# User-specific files
+.idea/
+.vs/
+.vscode/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# .NET build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Dd]Release/
+[Dd]ReleasePublic/
+[Aa]ssemblyInfo.cs
+[Dd]ebug*/
+bin/
+obj/
+
+# .NET Core
+.vscode/
+.vsconfig
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# JetBrains Rider
+.idea/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# ASP.NET Core
+wwwroot/
+node_modules/
+
+# Local db files
+*.mdf
+*.ldf
+
+# NPM packages
+node_modules/
+
+# Docker files
+.docker/
+
+# Azure Functions
+.local/
+
+# Tye
+.tye/
+
+# NUnit
+TestResult.xml
+*.log
+
+# ASP.NET Identity
+appsettings.Development.json

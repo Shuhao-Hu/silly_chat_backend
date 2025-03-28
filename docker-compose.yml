@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  mychatbackend:
+    build: .
+    ports:
+      - "5000:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=silly_chat;Username=postgres;Password=123
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_DB: silly_chat
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+    ports:
+      - "5432:5432"

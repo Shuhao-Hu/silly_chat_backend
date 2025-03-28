@@ -1,0 +1,6 @@
+@SillyChatBackend_HostAddress = http://localhost:5286
+
+GET {{SillyChatBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
