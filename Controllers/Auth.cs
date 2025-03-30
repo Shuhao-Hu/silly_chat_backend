@@ -34,7 +34,7 @@ public class AuthController(IAuthService authService, ITokenService tokenService
         var result = authService.Signup(authData);
         if (!result.Success)
         {
-            return Conflict(result);
+            return Conflict(new { error = result.Message });
         }
         return Created();
     }

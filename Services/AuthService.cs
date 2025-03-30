@@ -32,14 +32,14 @@ public class AuthService(IUserRepository userRepository, ITokenService tokenServ
         {
             return new AuthResult(false, "Email already exists");
         }
-        User user = new()
+        User? user = new()
         {
             Username = authData.Username!,
             Email = authData.Email,
             Password = authData.Password
         };
-        userRepository.CreateUser(user);
-        return new AuthResult(true, "Signup successful");
+        user = userRepository.CreateUser(user);
+        return user == null ? new AuthResult(false, "Failed to create user") : new AuthResult(true, "Signup successful");
     }
 
     public FriendInfo? SearchUser(uint userId, string email)
