@@ -9,6 +9,7 @@ public interface IAuthService
     AuthResult Login(AuthData authData);
     AuthResult Signup(AuthData authData);
     FriendInfo? SearchUser(uint userId, string email);
+    bool UpdateUsername(uint userId, string username);
 }
 
 public class AuthService(IUserRepository userRepository, ITokenService tokenService) : IAuthService
@@ -45,10 +46,15 @@ public class AuthService(IUserRepository userRepository, ITokenService tokenServ
     public FriendInfo? SearchUser(uint userId, string email)
     {
         var user = userRepository.GetUserByEmail(email);
-        if (user == null)
-        {
-            return null;
-        }
-        return new FriendInfo(user.Id, user.Username, user.Email);
+        return user == null ? null : new FriendInfo(user.Id, user.Username, user.Email);
+    }
+
+    public bool UpdateUsername(uint userId, string username)
+    {
+        var user = userRepository.GetUserById(userId);
+        if (user == null) return false;
+        user.Username = username;
+        userRepository.UpdateUser(user);
+        return true;
     }
 }

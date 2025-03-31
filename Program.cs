@@ -57,8 +57,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Logging
-// builder.Services.AddHttpLogging(options => { });
-builder.Logging.AddConsole();
+builder.Services.AddHttpLogging(options => { });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -104,14 +103,6 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 app.UseCors("AllowAll"); // Enable CORS
-app.Use(async (context, next) =>
-{
-    var start = DateTime.UtcNow;
-    await next(); // Call the next middleware
-    var elapsed = DateTime.UtcNow - start;
-
-    Console.WriteLine($"{context.Response.StatusCode} {context.Request.Method} {context.Request.Path} ({elapsed.TotalMilliseconds}ms)");
-});
 app.UseWebSockets(new WebSocketOptions
 {
     KeepAliveInterval = TimeSpan.FromSeconds(120),
