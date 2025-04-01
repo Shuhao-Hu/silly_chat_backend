@@ -26,7 +26,7 @@ public class FriendRepository(AppDbContext context) : IFriendRepository
     {
         return
         [
-            .. context.Friends.Where(f => f.FriendId == userId && f.Status == "accepted").Include(f => f.FriendUser)
+            .. context.Friends.Where(f => f.FriendId == userId && f.Status == "accepted").Include(f => f.User)
         ];
     }
 

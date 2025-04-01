@@ -24,9 +24,9 @@ public class FriendService(
         return
         [
             .. friends.Select(f => new FriendInfo(
-                f.Id,
-                f.FriendUser!.Username,
-                f.FriendUser!.Email
+                f.User!.Id,
+                f.User!.Username,
+                f.User!.Email
             ))
         ];
     }
@@ -63,7 +63,7 @@ public class FriendService(
             return FriendRequestStatus.AlreadyResponded;
         }
 
-        if (response == "accepted" || response == "rejected")
+        if (response is "accepted" or "rejected")
         {
             friendRequest.Status = response;
         }
@@ -73,6 +73,14 @@ public class FriendService(
         }
 
         friendRepository.UpdateFriend(friendRequest);
+        if (response != "accepted") return FriendRequestStatus.Success;
+        var friend = new Friend
+        {
+            UserId = friendRequest.FriendId,
+            FriendId = friendRequest.UserId,
+            Status = "accepted"
+        };
+        friendRepository.CreateFriend(friend);
         return FriendRequestStatus.Success;
     }
 
