@@ -31,6 +31,11 @@ public class WebsocketConnectionManager
         return true;
     }
 
+    public bool ClientExists(uint userId)
+    {
+        return _clients.TryGetValue(userId, out _);
+    }
+
     public async Task SendMessageToUser(Message message)
     {
         await _directMessageChannel.Writer.WriteAsync(message);
@@ -45,7 +50,16 @@ public class WebsocketConnectionManager
     {
         await foreach (var message in _directMessageChannel.Reader.ReadAllAsync())
         {
-            // TODO
+            if (_clients.TryGetValue(message.RecipientId, out var client))
+            {
+                _ = client.SendMessageAsync(JsonSerializer.Serialize(
+                    new
+                    {
+                        type = "dm",
+                        payload = message
+                    }
+                ));
+            }
         }
     }
 
@@ -131,10 +145,6 @@ public class Client
                         var pongBytes = System.Text.Encoding.UTF8.GetBytes(pongMessage);
                         await _websocket.SendAsync(new ArraySegment<byte>(pongBytes), WebSocketMessageType.Text, true,
                             CancellationToken.None);
-                    }
-                    else
-                    {
-                        // TODO
                     }
                 }
             }

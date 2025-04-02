@@ -83,6 +83,8 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IFriendRepository, FriendRepository>();
 builder.Services.AddScoped<IFriendService, FriendService>();
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessagesService, MessageService>();
 
 // 🔹 4. Enable CORS (for frontend communication)
 builder.Services.AddCors(options =>
