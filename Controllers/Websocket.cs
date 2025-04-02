@@ -31,8 +31,11 @@ public class WebSocketController(WebsocketConnectionManager manager, IUserContex
             {
                 var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
                 var client = new Client(userId.Value, webSocket, manager);
-                manager.AddClient(client);
-                Task[] tasks = { client.ReadFromUser(), client.WriteToUser() };
+                while (!manager.AddClient(client))
+                {
+                    manager.RemoveClient(client.userId);
+                }
+                Task[] tasks = [client.ReadFromUser(), client.WriteToUser()];
                 Task.WaitAny(tasks);
             }
             else
