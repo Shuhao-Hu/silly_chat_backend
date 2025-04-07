@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
+using SillyChatBackend.Controllers;
 using SillyChatBackend.Models;
 
 namespace SillyChatBackend.Services;
@@ -89,12 +91,15 @@ public class Client
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-    public Client(uint userId, WebSocket websocket, WebsocketConnectionManager manager)
+    private readonly ILogger<WebSocketController> _logger;
+
+    public Client(uint userId, WebSocket websocket, WebsocketConnectionManager manager, ILogger<WebSocketController> logger)
     {
         _manager = manager;
         this.userId = userId;
         _websocket = websocket;
         _lastMessageReceived = DateTime.UtcNow;
+        _logger = logger;
         _ = MonitorTimeout(_cancellationTokenSource.Token);
     }
 
@@ -110,7 +115,7 @@ public class Client
             await foreach (var message in _messageChannel.Reader.ReadAllAsync(_cancellationTokenSource.Token))
             {
                 if (_websocket.State != WebSocketState.Open) continue;
-                var bytes = System.Text.Encoding.UTF8.GetBytes(message);
+                var bytes = Encoding.UTF8.GetBytes(message);
                 await _websocket.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
             }
         }
@@ -125,33 +130,82 @@ public class Client
         var buffer = new byte[1024 * 4];
         try
         {
-            while (_websocket.State == WebSocketState.Open && !_cancellationTokenSource.IsCancellationRequested)
+            while (_websocket.State == WebSocketState.Open)
             {
-                var result = await _websocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                _lastMessageReceived = DateTime.UtcNow;
-
-                if (result.MessageType == WebSocketMessageType.Close)
+                var receiveBuffer = new ArraySegment<byte>(buffer);
+            
+                WebSocketReceiveResult result;
+                using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
                 {
-                    await _websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
-                    _manager.RemoveClient(userId);
-                    break;
-                }
-                else if (result.MessageType == WebSocketMessageType.Text)
-                {
-                    var message = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    if (message.Equals("ping", StringComparison.OrdinalIgnoreCase))
+                    try
                     {
-                        var pongMessage = "pong";
-                        var pongBytes = System.Text.Encoding.UTF8.GetBytes(pongMessage);
-                        await _websocket.SendAsync(new ArraySegment<byte>(pongBytes), WebSocketMessageType.Text, true,
+                        result = await _websocket.ReceiveAsync(receiveBuffer, cts.Token);
+                        // Update the last message timestamp whenever we receive any message
+                        _lastMessageReceived = DateTime.UtcNow;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogWarning($"WebSocket read timed out for {userId}");
+                        break;
+                    }
+                }
+
+                if (result.MessageType == WebSocketMessageType.Text)
+                {
+                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    _logger.LogInformation($"Message received: {message}");
+                    
+                    // Process the message
+                    if (message.ToLower() == "ping")
+                    {
+                        _logger.LogInformation($"Ping received from client {userId}, sending pong");
+                        
+                        // Send a pong response
+                        var pongMessage = Encoding.UTF8.GetBytes("pong");
+                        await _websocket.SendAsync(
+                            new ArraySegment<byte>(pongMessage),
+                            WebSocketMessageType.Text,
+                            true,
+                            CancellationToken.None);
+                    }
+                    else
+                    {
+                        // Echo the message back
+                        var responseMessage = Encoding.UTF8.GetBytes($"Server received: {message}");
+                        await _websocket.SendAsync(
+                            new ArraySegment<byte>(responseMessage),
+                            WebSocketMessageType.Text,
+                            true,
                             CancellationToken.None);
                     }
                 }
+                else if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    _logger.LogInformation($"WebSocket close frame received for {userId}");
+                    break;
+                }
             }
         }
-        catch (Exception)
+        catch (WebSocketException ex)
         {
+            _logger.LogError($"WebSocket error for {userId}: {ex.Message}");
+        }
+        finally
+        {
+            _logger.LogInformation($"WebSocket connection closing: {userId}");
+            
+            
             _manager.RemoveClient(userId);
+            // Close the socket gracefully if it's still open
+            if (_websocket.State == WebSocketState.Open)
+            {
+                await _websocket.CloseAsync(
+                    WebSocketCloseStatus.NormalClosure,
+                    "Connection closed by the server",
+                    CancellationToken.None);
+            }
+            
+            _websocket.Dispose();
         }
     }
 

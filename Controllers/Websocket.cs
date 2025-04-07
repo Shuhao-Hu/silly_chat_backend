@@ -6,7 +6,7 @@ namespace SillyChatBackend.Controllers;
 
 [ApiController]
 [Route("/ws")]
-public class WebSocketController(WebsocketConnectionManager manager, IUserContext userContext) : ControllerBase
+public class WebSocketController(WebsocketConnectionManager manager, IUserContext userContext, ILogger<WebSocketController> logger) : ControllerBase
 {
     [HttpGet]
     public async Task Get()
@@ -30,7 +30,7 @@ public class WebSocketController(WebsocketConnectionManager manager, IUserContex
             if (HttpContext.WebSockets.IsWebSocketRequest)
             {
                 var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                var client = new Client(userId.Value, webSocket, manager);
+                var client = new Client(userId.Value, webSocket, manager, logger);
                 while (!manager.AddClient(client))
                 {
                     manager.RemoveClient(client.userId);

@@ -31,7 +31,7 @@ public class MessageService(WebsocketConnectionManager manager, IMessageReposito
     public Message[] GetUnreadMessages(uint userId)
     {
         var unreadMessages = repository.GetUnreadMessages(userId);
-        Task.Run(() => repository.MarkMessagesAsRead(unreadMessages));
+        repository.MarkMessagesAsRead(unreadMessages);
         return unreadMessages;
     }
 }
