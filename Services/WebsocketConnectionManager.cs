@@ -13,7 +13,8 @@ public class WebsocketConnectionManager
     private readonly ConcurrentDictionary<uint, Client> _clients = new();
     private readonly Channel<Message> _directMessageChannel = Channel.CreateUnbounded<Message>();
     private readonly Channel<uint> _friendRequestChannel = Channel.CreateUnbounded<uint>();
-
+    private readonly Channel<uint> _friendRequestAccepted = Channel.CreateUnbounded<uint>();
+    
     public WebsocketConnectionManager()
     {
         Task.Run(ProcessMessages);
@@ -48,6 +49,11 @@ public class WebsocketConnectionManager
         await _friendRequestChannel.Writer.WriteAsync(targetUserId);
     }
 
+    public async Task SendFriendRequestAcceptedToUser(uint targetUserId)
+    {   
+        await _friendRequestAccepted.Writer.WriteAsync(targetUserId);
+    }
+
     private async Task ProcessMessages()
     {
         await foreach (var message in _directMessageChannel.Reader.ReadAllAsync())
@@ -72,6 +78,17 @@ public class WebsocketConnectionManager
             if (_clients.TryGetValue(targetUserId, out var client))
             {
                 _ = client.SendMessageAsync(JsonSerializer.Serialize(new { type = "friend_request" }));
+            }
+        }
+    }
+
+    private async Task ProcessFriendRequestAccepted()
+    {
+        await foreach (var targetUserId in _friendRequestChannel.Reader.ReadAllAsync())
+        {
+            if (_clients.TryGetValue(targetUserId, out var client))
+            {
+                _ = client.SendMessageAsync(JsonSerializer.Serialize(new { type = "friend_request_accepted" }));
             }
         }
     }

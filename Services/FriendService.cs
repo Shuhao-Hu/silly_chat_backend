@@ -81,6 +81,7 @@ public class FriendService(
             Status = "accepted"
         };
         friendRepository.CreateFriend(friend);
+        _ = manager.SendFriendRequestAcceptedToUser(friendRequest.UserId);
         return FriendRequestStatus.Success;
     }
 
